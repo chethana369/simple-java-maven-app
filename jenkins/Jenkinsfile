@@ -1,27 +1,41 @@
 pipeline {
-    agent any
-    options {
-        skipStagesAfterUnstable()
+    // 1. Tell Jenkins to run on any available agent
+    agent any 
+
+    // 2. Specify the tools to use (these MUST match your Global Tool Configuration)
+    tools {
+        maven 'maven-3'
+        jdk 'jdk-17'
     }
+
+    // 3. Define the stages of your pipeline
     stages {
+        
         stage('Build') {
             steps {
+                // Run Maven to compile and package the app
                 sh 'mvn -B -DskipTests clean package'
             }
         }
+        
         stage('Test') {
             steps {
+                // Run the tests
                 sh 'mvn test'
             }
             post {
+                // Always publish the test results, even if the tests fail
                 always {
                     junit 'target/surefire-reports/*.xml'
                 }
             }
         }
-        stage('Deliver') { 
+        
+        stage('Archive') {
             steps {
-                sh './jenkins/scripts/deliver.sh' 
+                // For our project, "Deploy" just means saving the built file.
+                // This archives the .jar file so you can download it from Jenkins.
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
     }
